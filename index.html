@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Android Device Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: none; /* hide at the first */
+        }
+    </style>
+</head>
+<body>
+<h1>Real-time Android Device Viewer</h1>
+<div align="center">
+    Devices:
+    <select id="deviceSelect" onchange="handleSelectionChange()"></select>
+    <br/><br/>
+
+    <img id="receivedImage" src="" alt=""/>
+</div>
+
+<script>
+    <!--  Update to your websocket server url here  -->
+    const server = "localhost:8000";
+    const wsUrl = `ws://${server}/ws`;
+
+    const selectBox = document.getElementById("deviceSelect");
+    let deviceId = "";
+    let sockets = {};
+
+    window.onload = loadDevices;
+
+    // load all android devices which connected to backend server
+    async function loadDevices() {
+        try {
+            const response = await fetch(`http://${server}/devices`);
+            if (!response.ok) {
+                throw new Error('Network error.');
+            }
+            const devices = await response.json();
+            const deviceSelect = document.getElementById('deviceSelect');
+            devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device;
+                option.textContent = device;
+                deviceSelect.appendChild(option);
+            });
+
+            // select first device(if there have devices connected)
+            if (devices.length > 0) {
+                selectBox.selectedIndex = 0;
+                handleSelectionChange();
+            }
+        } catch (error) {
+            console.error('Fail to get devices:', error);
+        }
+    }
+
+    // create websocket for the device and listen to websocket
+    function instantWebSocket() {
+        if (!deviceId) {
+            return
+        }
+        const socket = new WebSocket(`${wsUrl}?device_id=${deviceId}`);
+        sockets[deviceId]=socket;
+
+        socket.onopen = function() {
+            console.log('WebSocket connection is established.');
+
+            fetchDeviceStatus(deviceId);
+            console.log('Device status is fetched.');
+        };
+
+        socket.onmessage = function(event) {
+            const img = document.getElementById('receivedImage');
+            const blob = new Blob([event.data], { type: 'image/jpeg' }); // 根据你的图像格式调整
+            const url = URL.createObjectURL(blob);
+            img.src = url;
+            img.style.display = 'block'; // 显示图片
+        };
+
+        socket.onclose = function() {
+            console.log('WebSocket connection is closed.');
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+    }
+
+    // fetch device status, will start scrcpy server at backend when it is not started
+    function fetchDeviceStatus(deviceId) {
+        fetch(`http://${server}/device_status?device_id=${deviceId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Device is fetched.');
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+    }
+
+    // 'Change' event on device selection
+    function handleSelectionChange() {
+        <!--  Clear image area  -->
+        const img = document.getElementById('receivedImage');
+        img.src = "";
+
+        <!--  Close device's old connection  -->
+        if (deviceId) {
+            sockets[deviceId].close();
+        }
+
+        <!--  Get selected device ID -->
+        const selectBox = document.getElementById("deviceSelect");
+        const selectedValue = selectBox.options[selectBox.selectedIndex].value;
+        console.log("Selected device ID:", selectedValue);
+
+        <!--  Create new connection for new selected device  -->
+        deviceId = selectedValue;
+        if (deviceId) {
+            instantWebSocket();
+        }
+    }
+</script>
+</body>
+</html>
