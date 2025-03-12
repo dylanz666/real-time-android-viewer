@@ -285,8 +285,8 @@ class Client:
 
     def on_frame(self, func: Callable[[Any, Frame], None]):
         """
-        Add functoin to on-frame listeners.
-        Your function will be run on every valid frame recived.
+        Add function to on-frame listeners.
+        Your function will be run on every valid frame received.
 
         Args:
             func: callback to be called on every frame.
