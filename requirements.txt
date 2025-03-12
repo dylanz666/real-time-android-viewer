@@ -1,7 +1,7 @@
 fastapi==0.115.4
 uvicorn==0.32.0
 pillow===11.1.0
-opencv-python==1.26.4
+opencv-python==4.11.0.86
 numpy==1.26.4
 adbutils==2.8.0
 av==13.1.0
