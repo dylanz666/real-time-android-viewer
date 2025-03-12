@@ -275,7 +275,7 @@ class Client:
 
     def on_init(self, func: Callable[[Any], None]) -> None:
         """
-        Add funtion to on_init listeners.
+        Add function to on_init listeners.
         Your function is run after client.start() is called.
 
         Args:
