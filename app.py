@@ -10,7 +10,9 @@ from io import BytesIO
 from PIL import Image
 from starlette.responses import JSONResponse
 from fastapi.responses import HTMLResponse
-from pyscrcpy import Client
+
+from domain.screen_action import ScreenAction
+from pyscrcpy import Client, ACTION_DOWN, ACTION_UP
 
 # 缓存字典
 # 存储每个设备的帧缓存
@@ -143,9 +145,32 @@ async def fetch_device_status(device_id):
 
 
 @app.post("/screen_action")
-async def do_screen_action():
-    # TBD
-    pass
+async def do_screen_action(screen_action: ScreenAction):
+    if screen_action.device_id not in clients:
+        return JSONResponse(status_code=400, content={"message": "Please refresh the page!"})
+    x_resolution = clients[screen_action.device_id].resolution[0]
+    y_resolution = clients[screen_action.device_id].resolution[1]
+    control = clients[screen_action.device_id].control
+    if screen_action.action == "touch_down":
+        start_x = screen_action.start_x_percent * x_resolution
+        start_y = screen_action.start_y_percent * y_resolution
+        control.touch(x=start_x, y=start_y, action=ACTION_DOWN)
+    if screen_action.action == "touch_up":
+        end_x = screen_action.end_x_percent * x_resolution
+        end_y = screen_action.end_y_percent * y_resolution
+        control.touch(x=end_x, y=end_y, action=ACTION_UP)
+    if screen_action.action == "swipe":
+        start_x = screen_action.start_x_percent * x_resolution
+        start_y = screen_action.start_y_percent * y_resolution
+        end_x = screen_action.end_x_percent * x_resolution
+        end_y = screen_action.end_y_percent * y_resolution
+        control.swipe(start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y, move_steps_delay=0.05)
+    return JSONResponse(status_code=200, content={
+        "action": screen_action.action,
+        "start_x": screen_action.start_x,
+        "start_y": screen_action.start_y,
+        "device_id": screen_action.device_id
+    })
 
 
 # 发送数据给所有连接的客户端（目前没用到）

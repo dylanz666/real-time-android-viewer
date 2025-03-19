@@ -7,3 +7,4 @@ adbutils==2.8.0
 av==13.1.0
 loguru==0.7.3
 cachetools==5.5.2
+pydantic~=2.9.2
