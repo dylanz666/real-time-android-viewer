@@ -28,7 +28,7 @@
         <select id="deviceSelect" onchange="handleSelectionChange()"></select>
         <br /><br />
 
-        <img id="receivedImage" src="" alt="" draggable="false" />
+        <img id="receivedImage" src="" alt="" draggable="false" tabindex="0" />
     </div>
 
     <script>
@@ -164,15 +164,6 @@
 
         // Add mouse event listeners to the image
         const img = document.getElementById('receivedImage');
-        img.addEventListener('mouseover', function (event) {
-            event.preventDefault();
-            console.log('Mouse is over the image at:', event.clientX, event.clientY);
-        });
-
-        img.addEventListener('mouseout', function (event) {
-            console.log('Mouse left the image at:', event.clientX, event.clientY);
-        });
-
         let startXPercent = 0;
         let startYPercent = 0;
         let endXPercent = 0;
@@ -180,6 +171,7 @@
         let mouseDown = false;
         let mouseUp = false;
         img.addEventListener('mousedown', function (event) {
+            event.preventDefault();
             // Get the image dimensions
             const rect = img.getBoundingClientRect();
             const imgWidth = rect.width;
@@ -199,6 +191,7 @@
         });
 
         img.addEventListener('mouseup', function (event) {
+            event.preventDefault();
             // Get the image dimensions
             const rect = img.getBoundingClientRect();
             const imgWidth = rect.width;
@@ -206,69 +199,65 @@
             endXPercent = ((event.clientX - rect.left) / imgWidth).toFixed(4);
             endYPercent = ((event.clientY - rect.top) / imgHeight).toFixed(4);
             mouseDown = false;
-            
-            if (startXPercent == endXPercent && startYPercent == endYPercent) {
-                // Prepare the screen action data
-                const screenAction = {
-                    action: 'touch_up',
-                    end_x_percent: endXPercent,
-                    end_y_percent: endYPercent,
-                    device_id: deviceId
-                };
 
-                sendScreenAction(screenAction);                
-                mouseUp = true;
-                return;
-            }
-            // // Prepare the screen action data
-            // const screenAction = {
-            //     action: 'swipe',
-            //     start_x_percent: startXPercent,
-            //     start_y_percent: startYPercent,
-            //     end_x_percent: endXPercent,
-            //     end_y_percent: endYPercent,
-            //     device_id: deviceId
-            // };
-
-            // sendScreenAction(screenAction);
-        });
-
-        img.addEventListener('click', function (event) {
-
-        });
-
-        img.addEventListener('dblclick', function (event) {
-            event.preventDefault();
-            console.log('Image double clicked at:', event.clientX, event.clientY);
+            const screenAction = {
+                action: 'touch_up',
+                end_x_percent: endXPercent,
+                end_y_percent: endYPercent,
+                device_id: deviceId
+            };
+            sendScreenAction(screenAction);
+            mouseUp = true;
+            mouseDown = false;
         });
 
         // Add mousemove event listener to track mouse movement over the image
-        let mouseMoveTimeout;
         img.addEventListener('mousemove', function (event) {
             if (!mouseDown) {
                 return;
             }
-            clearTimeout(mouseMoveTimeout);
+            const rect = img.getBoundingClientRect();
+            const imgWidth = rect.width;
+            const imgHeight = rect.height;
+            endXPercent = ((event.clientX - rect.left) / imgWidth).toFixed(4);
+            endYPercent = ((event.clientY - rect.top) / imgHeight).toFixed(4);
 
-            mouseMoveTimeout = setTimeout(() => {
-                const rect = img.getBoundingClientRect();
-                const imgWidth = rect.width;
-                const imgHeight = rect.height;
+            const screenAction = {
+                action: 'touch_move',
+                start_x_percent: startXPercent,
+                start_y_percent: startYPercent,
+                end_x_percent: endXPercent,
+                end_y_percent: endYPercent,
+                device_id: deviceId
+            };
+            sendScreenAction(screenAction);
+        });
 
-                endXPercent = ((event.clientX - rect.left) / imgWidth).toFixed(4);
-                endYPercent = ((event.clientY - rect.top) / imgHeight).toFixed(4);
-
+        // Add keyboard event listeners
+        document.addEventListener('keydown', function (event) {
+            event.preventDefault();
+            const key = event.key;
+            if (isTextInputKey(key)) {
                 const screenAction = {
-                    action: 'swipe',
-                    start_x_percent: startXPercent,
-                    start_y_percent: startYPercent,
-                    end_x_percent: endXPercent,
-                    end_y_percent: endYPercent,
+                    action: "input_text",
+                    text: key,
                     device_id: deviceId
                 };
                 sendScreenAction(screenAction);
-            }, 200);
+                return;
+            }
+
+            const screenAction = {
+                action: "input_key_event",
+                main_key: key,
+                device_id: deviceId
+            };
+            sendScreenAction(screenAction);
         });
+
+        function isTextInputKey(key) {
+            return key.length === 1 && key.match(/[a-zA-Z0-9`~!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/? ]/);
+        }
     </script>
 </body>
 

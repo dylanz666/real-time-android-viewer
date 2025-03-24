@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 
 class ScreenAction(BaseModel):
-    action: Literal["touch", "swipe", "touch_down", "touch_up"]
+    action: Literal["touch", "touch_down", "touch_up", "touch_move", "input_text", "input_key_event"]
     start_x: Optional[int] = None
     start_y: Optional[int] = None
     start_x_percent: Optional[float] = None
@@ -15,3 +15,4 @@ class ScreenAction(BaseModel):
     main_key: Optional[str] = None
     bind_key: Optional[str] = None
     device_id: Optional[str] = None
+    text: Optional[str] = None

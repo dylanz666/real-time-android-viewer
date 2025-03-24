@@ -12,7 +12,8 @@ from starlette.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 
 from domain.screen_action import ScreenAction
-from pyscrcpy import Client, ACTION_DOWN, ACTION_UP
+from pyscrcpy import Client, ACTION_DOWN, ACTION_UP, ACTION_MOVE, KEYCODE_DEL, KEYCODE_ESCAPE, \
+    KEYCODE_TAB, KEYCODE_SHIFT_LEFT, KEYCODE_PAGE_UP, KEYCODE_PAGE_DOWN, KEYCODE_ENTER
 
 # 缓存字典
 # 存储每个设备的帧缓存
@@ -159,17 +160,30 @@ async def do_screen_action(screen_action: ScreenAction):
         end_x = screen_action.end_x_percent * x_resolution
         end_y = screen_action.end_y_percent * y_resolution
         control.touch(x=end_x, y=end_y, action=ACTION_UP)
-    if screen_action.action == "swipe":
-        start_x = screen_action.start_x_percent * x_resolution
-        start_y = screen_action.start_y_percent * y_resolution
+    if screen_action.action == "touch_move":
         end_x = screen_action.end_x_percent * x_resolution
         end_y = screen_action.end_y_percent * y_resolution
-        control.swipe(start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y, move_steps_delay=0.05)
+        control.touch(x=end_x, y=end_y, action=ACTION_MOVE)
+    if screen_action.action == "input_text":
+        control.text(screen_action.text)
+    if screen_action.action == "input_key_event":
+        key_mappings = {
+            'Enter': KEYCODE_ENTER,
+            'Escape': KEYCODE_ESCAPE,
+            'Backspace': KEYCODE_DEL,
+            'Tab': KEYCODE_TAB,
+            'Shift': KEYCODE_SHIFT_LEFT,
+            'Delete': KEYCODE_DEL,
+            'PageUp': KEYCODE_PAGE_UP,
+            'PageDown': KEYCODE_PAGE_DOWN,
+        }
+        main_key = screen_action.main_key
+        bind_key = screen_action.bind_key
+        if main_key in key_mappings and (bind_key is None or bind_key == ""):
+            control.keycode(keycode=key_mappings[main_key], action=ACTION_DOWN)
+            control.keycode(keycode=key_mappings[main_key], action=ACTION_UP)
     return JSONResponse(status_code=200, content={
-        "action": screen_action.action,
-        "start_x": screen_action.start_x,
-        "start_y": screen_action.start_y,
-        "device_id": screen_action.device_id
+        "screen_action": screen_action.dict()
     })
 
 
