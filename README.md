@@ -40,12 +40,12 @@ const wsUrl = `ws://${server}/ws`;
 * Open index.html on your browser.
 
 ## How to control your android device?
-* Not for now. But you can write some code by using APIs' in pyscrcpy to control your device.
+* See demo in index.html
 
 ## Heads up
 There is no need to put backend and frontend together. For example:
 1. Set up your backend on your WinOS which have several android connected.
-2. Set uo your frontend on another frontend server, like Nginx server.
+2. Set up your frontend on another frontend server, like Nginx server.
 3. Visit your frontend page on another PC's browser, then you can see and control your remote android devices.
 
 ## Reference
